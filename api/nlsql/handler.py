@@ -194,6 +194,12 @@ async def create_complex_buttons(result: List[Union[str, Dict]], channel):
             await generate_button(result, key, word, buttons, postback)
 
     if buttons:
+        # Purge potential duplicates
+        for button in buttons:
+            q = button['value'].split('[[[')[0]
+            v = button['value'].split(':')[1].replace(']]]', '')
+            if v in q:
+                button['value'] = button['value'].replace(v, '', 1)
         return buttons
     return None
 
