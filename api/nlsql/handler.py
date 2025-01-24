@@ -196,10 +196,16 @@ async def create_complex_buttons(result: List[Union[str, Dict]], channel):
     if buttons:
         # Purge potential duplicates
         for button in buttons:
-            q = button['value'].split('[[[')[0]
-            v = button['value'].split(':')[1].replace(']]]', '')
-            if v in q:
-                button['value'] = button['value'].replace(v, '', 1)
+            # Extract `q` and `v` safely
+            split_value = button['value'].split('[[[')
+            q = split_value[0] if split_value else ""
+            v_section = button['value'].split(':', 1)  # Split on the first ':'
+            v = v_section[1].replace(']]]', '') if len(v_section) > 1 else ""
+
+            # Check if `v` exists in `q`, and only then modify `button['value']`
+            if v and v in q:
+                # Rebuild the value without repeating replacements unnecessarily
+                button['value'] = button['value'].replace(v, '', 1).strip(':')
         return buttons
     return None
 
