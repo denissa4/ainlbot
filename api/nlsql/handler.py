@@ -165,7 +165,35 @@ async def generate_like_button(result, key: str, word: str, buttons: List, postb
     buttons.append(button)
 
 
+async def generate_none_button(result, buttons: List, postback):
+    button = {'type': postback, 'title': f"None of the above", 'value': result[0]}
+    buttons.append(button)
+
+
 async def create_complex_buttons(result: List[Union[str, Dict]], channel):
+    # Purge any potential duplicate values
+    try:
+        vals = []
+        start = result[0].split('[([')[0]
+        end = result[0].split('])]')[1]
+        parts = result[0].split("[([")
+        parts = parts[1].split('])]')[0]
+        parts = parts.split('::')
+        for part in parts:
+            vals.append(part.split(':')[1])
+        parts = list(set(parts))
+        parts = '::'.join(parts)
+        parts = f'[([{parts}])]'
+
+        logging.info(f"\n\n\nSTART: {start}")
+        for v in vals:
+            logging.info(f"\n\n\nvalue: {v}")
+            if v in start:
+                start.replace(v, '')
+
+        result[0] = f"{start}{parts}{end}"
+    except Exception as e:
+        logging.info(f"Something went wrong when trying to remove duplicate buttons: {e}")
     buttons = []
     word_dict = result[-1]
     keys = list(word_dict.keys())
@@ -192,20 +220,11 @@ async def create_complex_buttons(result: List[Union[str, Dict]], channel):
         else:
             word: str = word_list
             await generate_button(result, key, word, buttons, postback)
+    
+    # Generate a button for "None of the above"
+    await generate_none_button(result, buttons, postback)
 
     if buttons:
-        # Purge potential duplicates
-        for button in buttons:
-            # Extract `q` and `v` safely
-            split_value = button['value'].split('[[[')
-            q = split_value[0] if split_value else ""
-            v_section = button['value'].split(':', 1)  # Split on the first ':'
-            v = v_section[1].replace(']]]', '') if len(v_section) > 1 else ""
-
-            # Check if `v` exists in `q`, and only then modify `button['value']`
-            if v and v in q:
-                # Rebuild the value without repeating replacements unnecessarily
-                button['value'] = button['value'].replace(v, '', 1).strip(':')
         return buttons
     return None
 
