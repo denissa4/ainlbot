@@ -97,5 +97,5 @@ CMD ["/usr/bin/supervisord", "-c", "/app/supervisord.conf"]
 
 # Marketplace annotations
 LABEL com.googleapis.cloudmarketplace.product.service.name="services/nlsql"
-LABEL com.googleapis.cloudmarketplace.product.id="ainlbot"
+LABEL com.googleapis.cloudmarketplace.product.id="nlsql"
 LABEL com.googleapis.cloudmarketplace.product.version="1.0.0"
