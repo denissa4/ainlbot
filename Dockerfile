@@ -96,6 +96,6 @@ COPY supervisord.conf /app/supervisord.conf
 CMD ["/usr/bin/supervisord", "-c", "/app/supervisord.conf"]
 
 # Marketplace annotations
-LABEL com.googleapis.cloudmarketplace.product.service.name="nlsql.endpoints.nlsql-public.cloud.goog"
+LABEL com.googleapis.cloudmarketplace.product.service.name="services/nlsql.endpoints.nlsql-public.cloud.goog"
 LABEL com.googleapis.cloudmarketplace.product.id="nlsql"
 LABEL com.googleapis.cloudmarketplace.product.version="latest"
