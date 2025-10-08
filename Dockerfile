@@ -4,18 +4,18 @@ FROM debian:trixie-20250929-slim
 RUN apt-get update && \
     apt-get install -y wget build-essential libssl-dev zlib1g-dev \
     libncurses5-dev libffi-dev libsqlite3-dev libreadline-dev libbz2-dev && \
-    wget https://www.python.org/ftp/python/3.9.0/Python-3.9.0.tgz && \
-    tar -xvf Python-3.9.0.tgz && \
-    cd Python-3.9.0 && \
+    wget https://www.python.org/ftp/python/3.7.17/Python-3.7.17.tgz && \
+    tar -xvf Python-3.7.17.tgz && \
+    cd Python-3.7.17 && \
     ./configure && \
     make -j"$(nproc)" && make altinstall && \
-    cd .. && rm -rf Python-3.9.0* && \
+    cd .. && rm -rf Python-3.7.17* && \
     apt-get remove -y build-essential wget && apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
 # Make python3.7 the default
-RUN ln -s /usr/local/bin/python3.9 /usr/local/bin/python && \
-    ln -s /usr/local/bin/pip3.9 /usr/local/bin/pip
+RUN ln -s /usr/local/bin/python3.7 /usr/local/bin/python && \
+    ln -s /usr/local/bin/pip3.7 /usr/local/bin/pip
 
 # Verify installation
 RUN python --version && pip --version
@@ -23,10 +23,7 @@ RUN apt-get update && \
     apt-get install -y \
         curl \
         apt-transport-https \
-        gnupg2 \
-        cmake \
-        build-essential \
-        libboost-all-dev && \
+        gnupg2 && \
     mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg && \
     echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/debian/12/prod bookworm main" > /etc/apt/sources.list.d/mssql-release.list && \
@@ -99,8 +96,6 @@ ENV Frequency=${Frequency}
 
 WORKDIR /app
 COPY . /app/
-
-RUN python -m pip install --upgrade pip setuptools wheel
 
 RUN pip install -r /app/api/requirements.txt && \
     mkdir -p /var/www/html/bot/static && \
