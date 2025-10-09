@@ -80,10 +80,22 @@ const nlBot = new Bot({
 console.log(process.env);
 
 // Listen for incoming requests.
-server.post('/api/messages', async (req, res) => {
-    // Route received a request to adapter for processing
-    await adapter.process(req, res, (context) => nlBot.run(context));
-});
+server.post(
+  '/api/messages',
+  (req: restify.Request, res: restify.Response, next: restify.Next) => {
+    adapter
+      .process(req, res, async (context) => {
+        await nlBot.run(context);
+      })
+      .then(() => next())
+      .catch((err) => {
+        console.error('Error in bot adapter:', err);
+        res.send(500, { error: 'Internal Server Error' });
+        return next(err);
+      });
+  }
+);
+
 
 // Listen for Upgrade requests for Streaming.
 server.on('upgrade', async (req, socket, head) => {
