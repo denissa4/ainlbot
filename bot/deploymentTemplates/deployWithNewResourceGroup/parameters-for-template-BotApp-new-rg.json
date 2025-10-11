@@ -2,25 +2,22 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "appId": {
+        "groupName": {
             "value": ""
         },
-        "appSecret": {
+        "groupLocation": {
             "value": ""
         },
-        "appType": {
-            "value": "MultiTenant"
-        },
-        "botId": {
+        "appServiceName": {
             "value": ""
         },
-        "botSku": {
+        "appServicePlanName": {
             "value": ""
         },
-        "newAppServicePlanName": {
+        "appServicePlanLocation": {
             "value": ""
         },
-        "newAppServicePlanSku": {
+        "appServicePlanSku": {
             "value": {
                 "name": "S1",
                 "tier": "Standard",
@@ -29,22 +26,22 @@
                 "capacity": 1
             }
         },
-        "appServicePlanLocation": {
+        "appType": {
+            "value": "MultiTenant"
+        },
+        "appId": {
             "value": ""
         },
-        "existingAppServicePlan": {
-            "value": ""
-        },
-        "newWebAppName": {
+        "appSecret": {
             "value": ""
         },
         "tenantId": {
             "value": ""
         },
-        "existingUserAssignedMSIName": {
+        "UMSIName": {
             "value": ""
         },
-        "existingUserAssignedMSIResourceGroupName": {
+        "UMSIResourceGroupName": {
             "value": ""
         }
     }
