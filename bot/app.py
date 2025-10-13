@@ -55,8 +55,14 @@ BOT = NLSQLBot(
 )
 
 # Bot message endpoint
-async def messages(req: Request) -> Response:
-    return await ADAPTER.process(req, BOT)
+async def messages(req: web.Request) -> web.Response:
+    body = await req.json()
+    activity = Activity().deserialize(body)
+    
+    auth_header = req.headers.get("Authorization", "")
+
+    await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
+    return web.Response(status=200)
 
 # Create the AIOHTTP web app
 APP = web.Application(middlewares=[aiohttp_error_middleware])
