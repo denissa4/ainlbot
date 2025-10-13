@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 import plotly.io as pio
 from itertools import groupby
 import plotly.express as px
+import pyarrow_hotfix
 
 
 def save(name='', fmt='png'):

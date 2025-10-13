@@ -11,6 +11,7 @@ import logging
 
 from . import graph
 from .nlsql_typing import Buttons, NLSQLAnswer
+import pyarrow_hotfix
 
 logging.basicConfig(level=logging.INFO)
 

@@ -1,5 +1,6 @@
 from flask_api import FlaskAPI, status
 from flask import request
+import pyarrow_hotfix
 
 from .nlsql.handler import parsing_text
 from .nlsql.nlsql_typing import NLSQLAnswer
