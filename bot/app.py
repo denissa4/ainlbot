@@ -8,7 +8,7 @@ from http import HTTPStatus
 
 from aiohttp import web
 from aiohttp.web import Request, Response, json_response
-from botbuilder.core import TurnContext, BotFrameworkAdapterSettings, BotFrameworkAdapter
+from botbuilder.core import TurnContext
 from botbuilder.core.integration import aiohttp_error_middleware
 from botbuilder.integration.aiohttp import (
     CloudAdapter,
@@ -21,8 +21,8 @@ from config import DefaultConfig
 
 CONFIG = DefaultConfig()
 
-settings = BotFrameworkAdapterSettings(CONFIG.MicrosoftAppId, CONFIG.MicrosoftAppPassword)
-ADAPTER = BotFrameworkAdapter(settings)
+BOT_AUTHENTICATION = ConfigurationBotFrameworkAuthentication(CONFIG)
+ADAPTER = CloudAdapter(BOT_AUTHENTICATION)
 
 
 # Error handler
@@ -55,14 +55,8 @@ BOT = NLSQLBot(
 )
 
 # Bot message endpoint
-async def messages(req: web.Request) -> web.Response:
-    body = await req.json()
-    activity = Activity().deserialize(body)
-    
-    auth_header = req.headers.get("Authorization", "")
-
-    await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
-    return web.Response(status=200)
+async def messages(req: Request) -> Response:
+    return await ADAPTER.process(req, BOT)
 
 # Create the AIOHTTP web app
 APP = web.Application(middlewares=[aiohttp_error_middleware])
