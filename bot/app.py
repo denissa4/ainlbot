@@ -8,7 +8,7 @@ from http import HTTPStatus
 
 from aiohttp import web
 from aiohttp.web import Request, Response, json_response
-from botbuilder.core import TurnContext
+from botbuilder.core import TurnContext, BotFrameworkAdapterSettings, BotFrameworkAdapter
 from botbuilder.core.integration import aiohttp_error_middleware
 from botbuilder.integration.aiohttp import (
     CloudAdapter,
@@ -21,9 +21,9 @@ from config import DefaultConfig
 
 CONFIG = DefaultConfig()
 
-# Create adapter using official CloudAdapter + ConfigurationBotFrameworkAuthentication
-BOT_AUTHENTICATION = ConfigurationBotFrameworkAuthentication(CONFIG)
-ADAPTER = CloudAdapter(BOT_AUTHENTICATION)
+settings = BotFrameworkAdapterSettings(CONFIG.MicrosoftAppId, CONFIG.MicrosoftAppPassword)
+ADAPTER = BotFrameworkAdapter(settings)
+
 
 # Error handler
 async def on_error(context: TurnContext, error: Exception):
