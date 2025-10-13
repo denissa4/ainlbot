@@ -1,7 +1,7 @@
 import os
 
 class DefaultConfig:
-    PORT = int(os.environ.get("PORT", 80))
+    PORT = int(os.environ.get("BOT_PORT", 3978))
     MicrosoftAppId = os.environ.get("MicrosoftAppId", "")
     MicrosoftAppPassword = os.environ.get("MicrosoftAppPassword", "")
     MicrosoftAppTenantId = os.environ.get("MicrosoftAppTenantId", "")
