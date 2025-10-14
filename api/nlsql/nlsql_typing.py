@@ -1,6 +1,5 @@
 from typing import List, Union, Dict
 from typing_extensions import TypedDict
-import pyarrow_hotfix
 
 
 class Images(TypedDict):

@@ -4,7 +4,6 @@ PyJWT==1.7.1
 kaleido==0.2.1
 pandas==1.3.5
 pyarrow==5.0.0
-pyarrow-hotfix==0.7.0
 snowflake-connector-python==2.7.0
 redshift-connector==2.0.889
 aioodbc==0.3.2

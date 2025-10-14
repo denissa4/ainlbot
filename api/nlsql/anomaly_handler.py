@@ -24,7 +24,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from nlsql.handler import api_post
 from nlsql.connectors import connectors
-import pyarrow_hotfix
 
 
 # Email configuration

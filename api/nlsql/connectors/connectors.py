@@ -14,8 +14,6 @@ from google.cloud import bigquery
 from google.oauth2 import service_account
 from azure.identity import DefaultAzureCredential
 
-import pyarrow_hotfix
-
 DEBUG = True if os.getenv('DEBUG', '') == '1' else False
 
 
