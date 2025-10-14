@@ -2,9 +2,9 @@ import os
 
 class DefaultConfig:
     PORT = int(os.environ.get("BOT_PORT", 3978))
-    MicrosoftAppId = os.environ.get("MicrosoftAppId", "")
-    MicrosoftAppPassword = os.environ.get("MicrosoftAppPassword", "")
-    MicrosoftAppTenantId = os.environ.get("MicrosoftAppTenantId", "")
-    MicrosoftAppType = os.environ.get('MicrosoftAppType', 'SingleTenant')
+    APP_ID = os.environ.get("MicrosoftAppId", "")
+    APP_PASSWORD = os.environ.get("MicrosoftAppPassword", "")
+    APP_TYPE = os.environ.get("MicrosoftAppType", "SingleTenant")
+    APP_TENANTID = os.environ.get("MicrosoftAppTenantId", "")
     NLSQL_API_URL = os.environ.get("NLSQL_API_URL", "http://localhost:8000/nlsql-analyzer")
     DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
