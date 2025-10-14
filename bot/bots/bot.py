@@ -14,6 +14,7 @@ from botbuilder.schema import (
     ActivityTypes,
     CardAction,
     CardImage,
+    HeroCard
 )
 
 class NLSQLBot(ActivityHandler):
@@ -101,8 +102,14 @@ class NLSQLBot(ActivityHandler):
                 buttons_list.append(
                     CardAction(type=btn.get("type"), title=btn.get("title"), value=btn.get("value"))
                 )
+        card = HeroCard(
+            title="",
+            text=text,
+            images=images_list,
+            buttons=buttons_list,
+        )
 
-        attachment = CardFactory.hero_card(title="", text=text, images=images_list, buttons=buttons_list)
+        attachment = CardFactory.hero_card(card)
         await turn_context.send_activity(MessageFactory.attachment(attachment))
 
     async def _adaptive_card_answer(self, turn_context: TurnContext, card_data):
