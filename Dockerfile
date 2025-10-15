@@ -8,24 +8,26 @@ COPY bot /app/bot
 RUN pip install --no-cache-dir -r /app/bot/requirements.txt
 
 # -------------------------------
-# Stage 2: Build API (Python 3.7)
+# Stage 2: Build API (Python 3.9)
 # -------------------------------
 FROM debian:trixie-20250929-slim AS api-build
 
 RUN apt-get update && \
     apt-get install -y wget build-essential libssl-dev zlib1g-dev liblzma-dev \
     libncurses5-dev libffi-dev libsqlite3-dev libreadline-dev libbz2-dev && \
-    wget https://www.python.org/ftp/python/3.7.17/Python-3.7.17.tgz && \
-    tar -xvf Python-3.7.17.tgz && \
-    cd Python-3.7.17 && \
-    ./configure && make -j"$(nproc)" && make altinstall && \
-    cd .. && rm -rf Python-3.7.17* && \
+    wget https://www.python.org/ftp/python/3.9.19/Python-3.9.19.tgz && \
+    tar -xvf Python-3.9.19.tgz && \
+    cd Python-3.9.19 && \
+    ./configure --enable-optimizations && \
+    make -j"$(nproc)" && make altinstall && \
+    cd .. && rm -rf Python-3.9.19* && \
     apt-get remove -y build-essential wget && apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
-# Make Python 3.7 default for this stage
-RUN ln -s /usr/local/bin/python3.7 /usr/local/bin/python && \
-    ln -s /usr/local/bin/pip3.7 /usr/local/bin/pip
+
+# Make Python 3.9 default for this stage
+RUN ln -s /usr/local/bin/python3.9 /usr/local/bin/python && \
+    ln -s /usr/local/bin/pip3.9 /usr/local/bin/pip
 
 WORKDIR /app
 COPY api /app/api
@@ -57,10 +59,10 @@ RUN apt-get update && \
 
 # Copy both Python installations
 COPY --from=bot-build /usr/local/ /usr/local/python311/
-COPY --from=api-build /usr/local/ /usr/local/python37/
+COPY --from=api-build /usr/local/ /usr/local/python39/
 
 # Add both to PATH
-ENV PATH="/usr/local/python37/bin:/usr/local/python311/bin:${PATH}"
+ENV PATH="/usr/local/python39/bin:/usr/local/python311/bin:${PATH}"
 
 # Copy app code
 WORKDIR /app
