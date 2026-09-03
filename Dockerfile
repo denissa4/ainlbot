@@ -1,4 +1,4 @@
-FROM debian:trixie-20250929-slim
+FROM debian:trixie-20260824-slim
 
 # Install Python 3.7 manually
 RUN apt-get update && \
@@ -27,7 +27,7 @@ RUN apt-get update && \
     mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg && \
     echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/debian/12/prod bookworm main" > /etc/apt/sources.list.d/mssql-release.list && \
-    curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get update -y && \
     ACCEPT_EULA=Y apt-get install -y \
         msodbcsql17 \
@@ -41,6 +41,14 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile && \
     echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
+
+# Pull security updates for everything installed above. The base image is a
+# point-in-time snapshot, so without this openssl/libssl3 and gnutls28 stay at
+# the versions baked into it and fail the Cloud Marketplace vulnerability scan.
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 ARG DataSource
 ENV DataSource=${DataSource}

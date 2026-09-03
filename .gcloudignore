@@ -1,0 +1,28 @@
+# Never bake local configuration or credentials into the image. The container
+# gets its configuration from environment variables at runtime (see the ARG/ENV
+# block in the Dockerfile and the Helm chart's ConfigMap/Secret), so .env is a
+# local development convenience only.
+.env
+.env.*
+
+# Not needed at runtime, and .git leaks history into a published image.
+.git
+.gitignore
+.idea
+.vscode
+*.iml
+
+# Rebuilt inside the image by `npm install && npm run build`.
+node_modules
+bot/node_modules
+bot/lib
+
+# Python build artefacts
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+
+# Agent/editor notes
+CLAUDE.md
+AGENTS.md

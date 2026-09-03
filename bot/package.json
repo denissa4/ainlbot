@@ -18,14 +18,14 @@
         "url": "https://github.com"
     },
     "dependencies": {
-        "botbuilder": "~4.15.0",
+        "botbuilder": "^4.23.0",
         "dotenv": "^8.2.0",
         "replace": "^1.2.0",
         "restify": "11.1.0"
     },
     "devDependencies": {
         "@types/dotenv": "6.1.1",
-        "@types/node": "^16.11.6",
+        "@types/node": "^20.11.0",
         "@types/restify": "8.4.2",
         "axios": "~0.27.2",
         "nodemon": "~2.0.4",
