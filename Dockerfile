@@ -1,24 +1,29 @@
 FROM debian:trixie-20260824-slim
 
-# Install Python 3.7 manually
+# Python comes from Debian (3.13.x on trixie), not built from source. The old
+# image compiled CPython 3.7 by hand, which is now End-of-Life - AWS Marketplace
+# rejects images containing EoL software, and it never received security updates.
+# Using the distro package means python is patched by `apt-get upgrade` like
+# everything else, and it cuts several minutes off the build.
+#
+# Debian marks the system python as externally managed (PEP 668), so application
+# dependencies live in a virtualenv at /venv rather than in site-packages.
 RUN apt-get update && \
-    apt-get install -y wget build-essential libssl-dev zlib1g-dev \
-    libncurses5-dev libffi-dev libsqlite3-dev libreadline-dev libbz2-dev && \
-    wget https://www.python.org/ftp/python/3.7.17/Python-3.7.17.tgz && \
-    tar -xvf Python-3.7.17.tgz && \
-    cd Python-3.7.17 && \
-    ./configure && \
-    make -j"$(nproc)" && make altinstall && \
-    cd .. && rm -rf Python-3.7.17* && \
-    apt-get remove -y build-essential wget && apt-get autoremove -y && \
+    apt-get install -y --no-install-recommends \
+        python3 \
+        python3-venv \
+        python3-dev \
+        build-essential \
+        unixodbc-dev && \
+    python3 -m venv /venv && \
+    /venv/bin/pip install --no-cache-dir --upgrade pip && \
     rm -rf /var/lib/apt/lists/*
 
-# Make python3.7 the default
-RUN ln -s /usr/local/bin/python3.7 /usr/local/bin/python && \
-    ln -s /usr/local/bin/pip3.7 /usr/local/bin/pip
+ENV PATH="/venv/bin:$PATH"
 
 # Verify installation
 RUN python --version && pip --version
+
 RUN apt-get update && \
     apt-get install -y \
         curl \
@@ -105,7 +110,7 @@ ENV Frequency=${Frequency}
 WORKDIR /app
 COPY . /app/
 
-RUN pip install -r /app/api/requirements.txt && \
+RUN /venv/bin/pip install --no-cache-dir -r /app/api/requirements.txt && \
     mkdir -p /var/www/html/bot/static && \
     cp /app/nginx/nginx.conf /etc/nginx/nginx.conf
 

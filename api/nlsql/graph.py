@@ -19,7 +19,7 @@ def save(name='', fmt='png'):
     if not os.path.exists(iPath):
         os.mkdir(iPath)
     os.chdir(iPath)
-    plt.savefig('{}.{}'.format(name, fmt), fmt='png')
+    plt.savefig('{}.{}'.format(name, fmt), format=fmt)
     os.chdir(pwd)
     return name
 
@@ -61,14 +61,11 @@ def build(array, title, Oy, Ox):
         if step == 0:
             step = 1
         targets = np.arange(len(dates), step=step)
-        new_dates = ['', ]
-        for i in range(len(dates)):
-            if i in targets:
-                new_dates.append(dates[i])
-            # else:
-            #     new_dates.append(' ')
-        plt.xticks(np.arange(len(dates)), new_dates, rotation=60, horizontalalignment='right', fontsize=12)
-        ax.xaxis.set_major_locator(ticker.MultipleLocator(step))
+        # matplotlib >= 3 validates that the number of tick locations matches the
+        # number of labels, so label exactly the sampled positions. Setting the
+        # ticks explicitly also replaces the major locator, so don't set one after.
+        plt.xticks(targets, [dates[i] for i in targets], rotation=60,
+                   horizontalalignment='right', fontsize=12)
         ax.xaxis.set_minor_locator(ticker.MultipleLocator(1))
         ax.grid(which='major', color='#D7D7D7', linestyle='--')
         ax.set_xlim([0, len(dates)])
@@ -291,7 +288,7 @@ def build_html_chart(array, title, Oy, Ox, mode='lines+markers', bubbles=False):
     file_path = '/var/www/html/bot/static/{}'.format(name_html)
     file_path_jpg = '/var/www/html/bot/static/{}'.format(name_jpg)
     pio.write_html(fig, file=file_path, auto_open=False)
-    fig.write_image(file_path_jpg, engine="kaleido")
+    fig.write_image(file_path_jpg)
     return name_html, name_jpg
 
 
@@ -328,7 +325,7 @@ def build_html_pie(array, title):
         file_path = '/var/www/html/bot/static/{}'.format(name_html)
         file_path_jpg = '/var/www/html/bot/static/{}'.format(name_jpg)
         pio.write_html(fig, file=file_path, auto_open=False)
-        fig.write_image(file_path_jpg, engine="kaleido")
+        fig.write_image(file_path_jpg)
         return name_html, name_jpg
 
 
@@ -392,7 +389,7 @@ def build_html_bar(array, title, Ox, Oy, barmode=False):
     file_path = '/var/www/html/bot/static/{}'.format(name_html)
     file_path_jpg = '/var/www/html/bot/static/{}'.format(name_jpg)
     pio.write_html(fig, file=file_path, auto_open=False)
-    fig.write_image(file_path_jpg, engine="kaleido")
+    fig.write_image(file_path_jpg)
 
     return name_html, name_jpg
 
@@ -428,6 +425,6 @@ def build_html_map(df, title, colorbar_title, locationmode='country names'):
     file_path = '/var/www/html/bot/static/{}'.format(name_html)
     file_path_jpg = '/var/www/html/bot/static/{}'.format(name_jpg)
     pio.write_html(fig, file=file_path, auto_open=False)
-    fig.write_image(file_path_jpg, engine="kaleido")
+    fig.write_image(file_path_jpg)
 
     return name_html, name_jpg
