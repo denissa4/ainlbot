@@ -33,3 +33,5 @@ openai==0.28.0
 markdown==3.10.3
 scipy==1.18.1
 numpy==2.5.2
+# Transitive (snowflake-connector); >=1.2.1 clears GHSA-6v7p-g79w-8964.
+msgpack>=1.2.1

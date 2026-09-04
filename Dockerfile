@@ -111,12 +111,39 @@ WORKDIR /app
 COPY . /app/
 
 RUN /venv/bin/pip install --no-cache-dir -r /app/api/requirements.txt && \
+    /venv/bin/pip install --no-cache-dir --upgrade 'setuptools>=78.1.1' && \
     mkdir -p /var/www/html/bot/static && \
     cp /app/nginx/nginx.conf /etc/nginx/nginx.conf
 
 RUN cd /app/bot && \
     npm install && \
-    npm run build
+    npm run build && \
+    npm prune --omit=dev && \
+    npm cache clean --force
+
+# Remove the build toolchain. It is only needed to compile Python wheels and the
+# TypeScript bot; leaving it in the published image adds a large vulnerability
+# surface (python3-dev pulls in linux-libc-dev, which alone accounts for dozens
+# of high-severity findings) that AWS Marketplace scans and rejects.
+RUN apt-get purge -y --auto-remove \
+        build-essential python3-dev libexpat1-dev unixodbc-dev \
+        gnupg2 apt-transport-https python3-setuptools-whl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /root/.cache /tmp/*
+
+# The npm CLI is build-time only - supervisord runs the compiled bot with node
+# directly. npm bundles its own copies of tar, minimatch, pacote, sigstore and
+# others, which account for most of the remaining high-severity findings, so
+# removing it removes them.
+RUN rm -rf /usr/lib/node_modules/npm /usr/bin/npm /usr/bin/npx /root/.npm
+
+# pip is build-time only too. It vendors its own copies of msgpack and
+# setuptools and declares them in pip/_vendor/vendor.txt, which scanners read as
+# installed packages even though the real installs are newer. Removing pip drops
+# those false findings and leaves no package manager in the runtime image.
+RUN rm -rf /venv/lib/python3.13/site-packages/pip \
+           /venv/lib/python3.13/site-packages/pip-*.dist-info \
+           /venv/bin/pip /venv/bin/pip3 /venv/bin/pip3.13
 
 # Ensure the supervisord configuration is copied
 COPY supervisord.conf /app/supervisord.conf
