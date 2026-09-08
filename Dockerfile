@@ -148,6 +148,37 @@ RUN rm -rf /venv/lib/python3.13/site-packages/pip \
 # Ensure the supervisord configuration is copied
 COPY supervisord.conf /app/supervisord.conf
 
+# ---------------------------------------------------------------------------
+# AWS Marketplace requirements (this branch only; master stays as Azure needs it)
+#
+# AWS: "Container images should be configured to run with non-root privileges by
+# default." Azure App Service expects the container on port 80 and runs it as
+# root, so both changes live here rather than on master.
+#
+# nginx.conf itself is left byte-identical to master and patched with sed, so
+# merging master into this branch never conflicts on it.
+# ---------------------------------------------------------------------------
+ARG NGINX_PORT=8080
+RUN sed -i "s/listen\s*80;/listen ${NGINX_PORT};/" /etc/nginx/nginx.conf && \
+    sed -i "s#^error_log /dev/stdout;#error_log /dev/stdout;\npid /run/nginx/nginx.pid;#" /etc/nginx/nginx.conf && \
+    grep -qE "listen\s+${NGINX_PORT};" /etc/nginx/nginx.conf
+
+# A non-root user, plus write access to exactly the paths that are written at
+# runtime: nginx's temp dirs and pid, the graph output directory, and the
+# anomaly handler's logs. Pre-creating and chowning these means nginx never needs
+# CHOWN at startup - the capability that had to be granted back on the GCP chart.
+RUN groupadd -r nlsql && \
+    useradd -r -g nlsql -u 10001 -d /app -s /usr/sbin/nologin nlsql && \
+    mkdir -p /var/lib/nginx/body /var/lib/nginx/proxy /var/lib/nginx/fastcgi \
+             /var/lib/nginx/uwsgi /var/lib/nginx/scgi /var/log/nginx /run/nginx \
+             /var/www/html/bot/static && \
+    touch /var/log/anomaly_handler.log /var/log/anomaly_handler_err.log && \
+    chown -R nlsql:nlsql /var/lib/nginx /var/log/nginx /run/nginx /var/www/html \
+                         /var/log/anomaly_handler.log /var/log/anomaly_handler_err.log \
+                         /app /venv
+
+USER nlsql
+
 CMD ["/usr/bin/supervisord", "-c", "/app/supervisord.conf"]
 
 # Marketplace annotations

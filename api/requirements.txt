@@ -35,3 +35,6 @@ scipy==1.18.1
 numpy==2.5.2
 # Transitive (snowflake-connector); >=1.2.1 clears GHSA-6v7p-g79w-8964.
 msgpack>=1.2.1
+# AWS Marketplace entitlement check (RegisterUsage). Only used when
+# AWS_MARKETPLACE_PRODUCT_CODE is set; see api/nlsql/aws_marketplace.py.
+boto3>=1.40.0

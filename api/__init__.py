@@ -11,6 +11,13 @@ import asyncio
 import logging
 import os
 
+# AWS Marketplace requires paid container products to verify the buyer's
+# subscription at start-up, from inside the application. No-ops unless
+# AWS_MARKETPLACE_PRODUCT_CODE is set, so Azure and local runs are unaffected.
+from .nlsql.aws_marketplace import verify_entitlement
+
+verify_entitlement()
+
 app = Flask(__name__)
 
 
