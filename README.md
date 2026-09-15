@@ -24,6 +24,8 @@ Docker env params:
 -   DbPort (_Used when DataSource is 'mysql' or 'postgresql'_)
 -   ApiEndPoint
 -   ApiToken
+-   UbbAgentEndpoint (_Google Cloud Marketplace only; the ubbagent sidecar's REST interface, e.g. `http://127.0.0.1:4567`. Usage reporting is disabled when unset_)
+-   UsageMetric (_Google Cloud Marketplace only; Producer Portal Metric ID, default `requests`_)
 -   AppId
 -   AuthTenantID (_Optional_)
 -   AppPassword

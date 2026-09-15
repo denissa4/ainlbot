@@ -72,6 +72,14 @@ ENV ApiToken=${ApiToken}
 ARG StaticEndPoint
 ENV StaticEndPoint=${StaticEndPoint}
 
+# Google Cloud Marketplace usage reporting. Set by the Helm chart only when the
+# ubbagent sidecar is running; unset everywhere else, which makes the reporting
+# in api/nlsql/metering.py a no-op.
+ARG UbbAgentEndpoint
+ENV UbbAgentEndpoint=${UbbAgentEndpoint}
+ARG UsageMetric
+ENV UsageMetric=${UsageMetric}
+
 ARG FromYear
 ENV FromYear=${FromYear}
 ARG ToYear

@@ -10,6 +10,7 @@ from .connectors import connectors
 import logging
 
 from . import graph
+from .metering import report_usage
 from .nlsql_typing import Buttons, NLSQLAnswer
 
 logging.basicConfig(level=logging.INFO)
@@ -655,6 +656,9 @@ async def api_post(message):
     headers = {'Authorization': 'Token ' + os.getenv('ApiToken'),
                "Content-Type": "application/json"}
     result = requests.post(url, headers=headers, json=payload).json()
+    # One billable "API Request" for Cloud Marketplace. Reported only once the
+    # call has succeeded, and a no-op unless the ubbagent sidecar is present.
+    report_usage()
     return result
 
 
