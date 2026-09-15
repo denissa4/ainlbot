@@ -47,14 +47,6 @@ RUN apt-get update && \
     echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile && \
     echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
 
-# Pull security updates for everything installed above. The base image is a
-# point-in-time snapshot, so without this openssl/libssl3 and gnutls28 stay at
-# the versions baked into it and fail the Cloud Marketplace vulnerability scan.
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
 ARG DataSource
 ENV DataSource=${DataSource}
 ARG DbUser
@@ -117,6 +109,22 @@ ENV Frequency=${Frequency}
 
 WORKDIR /app
 COPY . /app/
+
+# Pull security updates for everything installed above. The base image is a
+# point-in-time snapshot, so without this openssl/libssl3, perl, nginx and the
+# rest stay at the versions baked into it and fail the Cloud Marketplace
+# vulnerability scan.
+#
+# This MUST stay BELOW `COPY . /app/`. Above it, nothing invalidates the layer
+# between releases, so the build farm serves it from cache and the "upgrade"
+# silently stops happening: release 1.5.0 shipped a package set last refreshed
+# eleven days earlier and was flagged for 25 fixable CVEs, all of them Debian
+# security updates that already existed. The source copy changes every build, so
+# anything below it is always rebuilt.
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN /venv/bin/pip install --no-cache-dir -r /app/api/requirements.txt && \
     /venv/bin/pip install --no-cache-dir --upgrade 'setuptools>=78.1.1' && \
