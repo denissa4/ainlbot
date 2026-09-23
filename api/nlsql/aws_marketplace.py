@@ -1,11 +1,15 @@
 """AWS Marketplace entitlement check.
 
-The AWS Marketplace listing uses fixed monthly pricing, and AWS requires that
-model to verify the buyer's subscription with the Metering Service `RegisterUsage`
-API at container start-up:
+The AWS Marketplace listing is priced per Amazon ECS task-hour, and AWS requires
+that model to call the Metering Service `RegisterUsage` API at container
+start-up:
 
     "For hourly and fixed monthly pricing models, use the RegisterUsage API
      operation."
+
+Under hourly pricing this call is not only an entitlement check. AWS meters the
+running task from it, so it is the billing path itself: a task that never
+registers is never billed for.
 
 AWS is explicit that this belongs inside the application rather than in an
 ENTRYPOINT wrapper, because a buyer who can add image layers could otherwise
@@ -25,6 +29,14 @@ import uuid
 log = logging.getLogger(__name__)
 
 PRODUCT_CODE_ENV = "AWS_MARKETPLACE_PRODUCT_CODE"
+
+# AWS: a product code the buyer can override obliges the seller to validate it
+# against a list of trusted codes. This one arrives through the deployment
+# template, which a buyer downloads and could edit, so it is checked rather than
+# trusted. Substituting a free listing's code would otherwise buy unmetered use.
+TRUSTED_PRODUCT_CODES = frozenset({
+    "80vvvie6oupr9etlhimecwmkj",  # NLSQL, container product prod-7qorjjyr4dcyc
+})
 
 # AWS Marketplace issues a public key version alongside the product code. It has
 # been 1 for every container product to date; override only if AWS tells you to.
@@ -102,6 +114,10 @@ def verify_entitlement():
             "AWS Marketplace: %s. Not running on ECS or EKS, so continuing "
             "without an entitlement check.", message,
         )
+
+    if product_code not in TRUSTED_PRODUCT_CODES:
+        _fail(f"{product_code!r} is not a product code issued for this listing")
+        return
 
     # Never pin a Region here - it must come from the runtime environment, or
     # RegisterUsage raises InvalidRegionException.
