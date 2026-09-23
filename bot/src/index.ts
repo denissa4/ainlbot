@@ -35,11 +35,21 @@ server.listen(process.env.bot_port || process.env.BOT_PORT || 3978, () => {
     console.log('\nTo talk to your bot, open the emulator select "Open Bot"');
 });
 
+// Accept both naming schemes. The SDK's own names (MicrosoftAppId,
+// MicrosoftAppPassword, MicrosoftAppTenantId) win, but README.md has always
+// documented AppId / AppPassword / AuthTenantID, and deployments were written
+// against those -- the GCP Marketplace chart injected AppPassword, which nothing
+// here read, so the Teams channel could not start: with MicrosoftAppType
+// SingleTenant the SDK asserts "MicrosoftAppPassword is required" and the
+// process exits, leaving nothing on port 3978.
+//
+// An empty string is falsy, so an unset-or-blank primary falls through to the
+// alias and a deployment setting either name works.
 const credentialsFactory = new ConfigurationServiceClientCredentialFactory({
-    MicrosoftAppId: process.env.MicrosoftAppId,
-    MicrosoftAppPassword: process.env.MicrosoftAppPassword,
+    MicrosoftAppId: process.env.MicrosoftAppId || process.env.AppId,
+    MicrosoftAppPassword: process.env.MicrosoftAppPassword || process.env.AppPassword,
     MicrosoftAppType: process.env.MicrosoftAppType,
-    MicrosoftAppTenantId: process.env.MicrosoftAppTenantId
+    MicrosoftAppTenantId: process.env.MicrosoftAppTenantId || process.env.AuthTenantID
 });
 
 const botFrameworkAuthentication = createBotFrameworkAuthenticationFromConfiguration(null, credentialsFactory);

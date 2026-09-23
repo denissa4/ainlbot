@@ -47,14 +47,6 @@ RUN apt-get update && \
     echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile && \
     echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
 
-# Pull security updates for everything installed above. The base image is a
-# point-in-time snapshot, so without this openssl/libssl3 and gnutls28 stay at
-# the versions baked into it and fail the Cloud Marketplace vulnerability scan.
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
 ARG DataSource
 ENV DataSource=${DataSource}
 ARG DbUser
@@ -71,6 +63,14 @@ ARG ApiToken
 ENV ApiToken=${ApiToken}
 ARG StaticEndPoint
 ENV StaticEndPoint=${StaticEndPoint}
+
+# Google Cloud Marketplace usage reporting. Set by the Helm chart only when the
+# ubbagent sidecar is running; unset everywhere else, which makes the reporting
+# in api/nlsql/metering.py a no-op.
+ARG UbbAgentEndpoint
+ENV UbbAgentEndpoint=${UbbAgentEndpoint}
+ARG UsageMetric
+ENV UsageMetric=${UsageMetric}
 
 ARG FromYear
 ENV FromYear=${FromYear}
@@ -109,6 +109,22 @@ ENV Frequency=${Frequency}
 
 WORKDIR /app
 COPY . /app/
+
+# Pull security updates for everything installed above. The base image is a
+# point-in-time snapshot, so without this openssl/libssl3, perl, nginx and the
+# rest stay at the versions baked into it and fail the Cloud Marketplace
+# vulnerability scan.
+#
+# This MUST stay BELOW `COPY . /app/`. Above it, nothing invalidates the layer
+# between releases, so the build farm serves it from cache and the "upgrade"
+# silently stops happening: release 1.5.0 shipped a package set last refreshed
+# eleven days earlier and was flagged for 25 fixable CVEs, all of them Debian
+# security updates that already existed. The source copy changes every build, so
+# anything below it is always rebuilt.
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN /venv/bin/pip install --no-cache-dir -r /app/api/requirements.txt && \
     /venv/bin/pip install --no-cache-dir --upgrade 'setuptools>=78.1.1' && \
@@ -182,6 +198,6 @@ USER nlsql
 CMD ["/usr/bin/supervisord", "-c", "/app/supervisord.conf"]
 
 # Marketplace annotations
-LABEL com.googleapis.cloudmarketplace.product.service.name="services/nlsql.endpoints.nlsql-public.cloud.goog"
+LABEL com.googleapis.cloudmarketplace.product.service.name="services/nlsql-kubernetes.endpoints.nlsql-public.cloud.goog"
 LABEL com.googleapis.cloudmarketplace.product.id="nlsql"
 LABEL com.googleapis.cloudmarketplace.product.version="latest"
