@@ -87,7 +87,13 @@ const nlBot = new Bot({
     nlApiUrl: process.env.nlapiurl ?? 'http://localhost:8000/nlsql-analyzer'
 });
 
-console.log(process.env);
+// Never log process.env itself: it carries DbPassword, ApiToken and AppPassword,
+// which ECS injects from Secrets Manager. supervisord forwards stdout to the
+// awslogs driver, so dumping it writes every credential into CloudWatch Logs in
+// plaintext, readable by anyone with log access in the buyer's account. Log the
+// names only - that keeps the "is my variable set?" debugging value without the
+// leak.
+console.log('env keys:', Object.keys(process.env).sort().join(', '));
 
 // Listen for incoming requests.
 server.post(
