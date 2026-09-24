@@ -40,7 +40,24 @@ TRUSTED_PRODUCT_CODES = frozenset({
 
 # AWS Marketplace issues a public key version alongside the product code. It has
 # been 1 for every container product to date; override only if AWS tells you to.
-PUBLIC_KEY_VERSION = int(os.getenv("AWS_MARKETPLACE_PUBLIC_KEY_VERSION", "1"))
+#
+# Parsed defensively because this runs at import: api/__init__.py imports this
+# module before the Flask app exists, so an unparseable value would raise
+# ValueError inside the gunicorn worker and supervisord would restart it forever,
+# with nothing served and the cause buried in a stack trace.
+def _public_key_version():
+    raw = os.getenv("AWS_MARKETPLACE_PUBLIC_KEY_VERSION", "1").strip()
+    try:
+        return int(raw)
+    except ValueError:
+        log.warning(
+            "AWS Marketplace: AWS_MARKETPLACE_PUBLIC_KEY_VERSION=%r is not an "
+            "integer, falling back to 1.", raw,
+        )
+        return 1
+
+
+PUBLIC_KEY_VERSION = _public_key_version()
 
 _checked = False
 
