@@ -35,14 +35,16 @@ Running a Python module directly (inside the container) is how the anomaly job i
 
 | process | command | port |
 |---|---|---|
-| `api` | `gunicorn -t 300 -b 0.0.0.0:8000 api:app` | 8000 |
-| `bot` | `npm start` in `/app/bot` | 3978 (`bot_port`/`BOT_PORT`) |
+| `api` | `/venv/bin/gunicorn -t 300 -b 0.0.0.0:8000 api:app` | 8000 |
+| `bot` | `node ./lib/index.js` in `/app/bot` (precompiled at build time) | 3978 (`bot_port`/`BOT_PORT`) |
 | `nginx` | reverse proxy + static | 80 |
-| `anomaly_handler` | `python api/nlsql/anomaly_handler.py` | — |
+| `anomaly_handler` | `/venv/bin/python /app/api/nlsql/anomaly_handler.py` (logs to `/var/log/anomaly_handler*.log`) | — |
 
-nginx proxies `/api/messages` → `localhost:3978` and serves `/var/www/html/bot/static` for generated charts/CSVs. (The README's claim that `/api/messages` proxies to port 8000 is stale — trust `nginx/nginx.conf`.)
+nginx proxies `/api/messages` → `localhost:3978`, serves static files by extension from `/var/www/html` (generated charts/CSVs under `bot/static/`), and answers `/health` itself. (The README's claim that `/api/messages` proxies to port 8000 is stale — trust `nginx/nginx.conf`.)
 
-Request flow: Teams/Slack → nginx `/api/messages` → `bot/src/index.ts` (CloudAdapter) → `bot/src/bot.ts` axios POST → Flask `POST /nlsql-analyzer` → NLSQL SaaS + customer DB → payload back → rendered as text / hero card / adaptive card.
+Request flow: Teams/Slack → nginx `/api/messages` → `bot/src/index.ts` (CloudAdapter) → `bot/src/bot.ts` axios POST to `nlapiurl` (default `http://localhost:8000/nlsql-analyzer`) → Flask → NLSQL SaaS + customer DB → payload back → rendered as text / hero card / adaptive card.
+
+`api/nlsql/metering.py:report_usage` (called once per request from `handler.py`) posts Google Cloud Marketplace usage to a ubbagent sidecar. It does nothing unless `UbbAgentEndpoint` is set, and it must never raise. The same image ships to Azure App Service, AWS Marketplace and GCP Marketplace.
 
 ## The API↔bot contract
 
@@ -70,14 +72,16 @@ Points outside the corridor become anomalies → OpenAI (legacy `openai==0.28.0`
 
 ## Environment variables
 
-All config is env vars, read via `os.getenv` at call time (no settings module). `.env` at the repo root is the local template; the main `Dockerfile` re-declares most of them as `ARG`/`ENV`. The README lists them all. Groups: DB connection, `ApiEndPoint`/`ApiToken`/`StaticEndPoint`, Bot Framework (`AppId`/`AppPassword`/`AuthTenantID`, read in `index.ts` as `MicrosoftAppId`/`MicrosoftAppPassword`/`MicrosoftAppType`/`MicrosoftAppTenantId`), anomaly tuning, email, OpenAI.
+All config is env vars, read via `os.getenv` at call time (no settings module). `.env` at the repo root is the local template; the main `Dockerfile` re-declares most of them as `ARG`/`ENV`. The README lists them all. Groups: DB connection, `ApiEndPoint`/`ApiToken`/`StaticEndPoint`, Bot Framework (`AppId`/`AppPassword`/`AuthTenantID`, `index.ts` reads `MicrosoftAppId`/`MicrosoftAppPassword`/`MicrosoftAppTenantId` first and falls back to those short names, plus `MicrosoftAppType`. Under `UserAssignedMSI` both password names are ignored, because the SDK asserts that MSI gets no password.), Marketplace metering (`UbbAgentEndpoint`, `UsageMetric`), anomaly tuning, email, OpenAI.
 
 Naming is inconsistent and partly misspelled — the Dockerfile declares `BoundrySensetivity` while the code reads `BoundarySensitivity`, and `anomaly_handler.py` has a `os.getenv('BoundarySensetivity' '2.0')` string-concat typo in the GPT prompt. Verify the exact spelling in the file you're touching before adding a new one. Debug flags differ per component too: Python checks `DEBUG == '1'`, `bot.ts` checks `DEBUG === 'true'`.
 
 ## Constraints to respect
 
-- **Python 3.7**, compiled from source in the Dockerfile, with pins to match (`Flask==2.1.3`, `pandas==1.3.5`, `openai==0.28.0`, `numpy==1.21.6`). No walrus-free-only syntax problems, but no 3.8+ features, and don't casually bump `api/requirements.txt` — pyarrow/snowflake upgrades have been reverted before (see git history).
-- **Node 16** in the container image (`nodesource setup_16.x`, `node:16-alpine` for `bot/`), TypeScript 5.4 targeting `es2016`/commonjs.
+- **Python 3.13** from Debian trixie's system package, with deps in a venv at `/venv` (PEP 668). Everything in `api/requirements.txt` is pinned and was tested as one set, so don't bump pins casually; the comments at the top of that file explain the pins that matter. `kaleido==0.2.1` is held because 1.x needs Chrome in the image, which forces `plotly` to stay on 6.x. `openai==0.28.0` is held because the code uses the pre-1.0 API. Pyarrow/snowflake upgrades have been reverted before.
+- **Node 20** in the main image (`nodesource setup_20.x`). `bot/Dockerfile` still uses `node:16-alpine`. TypeScript 5.4 targets `es2016`/commonjs.
+- **The image must pass Marketplace vulnerability scans** (AWS/GCP). The Dockerfile deliberately keeps `apt-get upgrade` *below* `COPY . /app/` so the layer is never served from cache. It also purges the build toolchain and strips npm and pip from the final image, so there's no `npm`/`pip` at runtime. Keep that ordering and those removals, and don't add packages that bring in a lot of CVE exposure (e.g. Chrome).
+- `index.ts` must never log `process.env` or its values, because they include `DbPassword`, `ApiToken` and `AppPassword`. It logs key names only.
 - `handler.py` keeps **module-level mutable globals** (`list_of_elements`, `previous_add_btn`) for paginating "complex" graph results. They are shared across all users and requests — treat any change there as affecting concurrency behaviour.
 - The image carries Google Cloud Marketplace `LABEL`s at the bottom of the Dockerfile; keep them when editing.
 - The codebase uses hand-rolled async generators (`words`, `words_for_check`, `async_range`, `_words`) to iterate lists. They're pointless but pervasive; match surrounding style rather than half-converting.

@@ -45,9 +45,25 @@ server.listen(process.env.bot_port || process.env.BOT_PORT || 3978, () => {
 //
 // An empty string is falsy, so an unset-or-blank primary falls through to the
 // alias and a deployment setting either name works.
+//
+// Except the password under UserAssignedMSI. MSI authenticates with the
+// managed identity, and the SDK asserts "MicrosoftAppPassword must not be set
+// for MSI" if one is passed. On Azure App Service MSI deployments
+// MicrosoftAppPassword is blank but AppPassword is often still set, so the
+// fallthrough above picked it up and crash-looped the bot. For MSI the password
+// is never used, so drop it (from either name) with a warning instead.
+const appType = (process.env.MicrosoftAppType || '').trim();
+const isMsi = appType.toLowerCase() === 'userassignedmsi';
+const appPassword = process.env.MicrosoftAppPassword || process.env.AppPassword;
+if (isMsi && appPassword) {
+    // Name the variables only - never the value (see the env logging note below).
+    const setNames = ['MicrosoftAppPassword', 'AppPassword'].filter((name) => process.env[name]);
+    console.warn(`${setNames.join(' and ')} set but ignored: MicrosoftAppType is UserAssignedMSI, which authenticates with the managed identity.`);
+}
+
 const credentialsFactory = new ConfigurationServiceClientCredentialFactory({
     MicrosoftAppId: process.env.MicrosoftAppId || process.env.AppId,
-    MicrosoftAppPassword: process.env.MicrosoftAppPassword || process.env.AppPassword,
+    MicrosoftAppPassword: isMsi ? undefined : appPassword,
     MicrosoftAppType: process.env.MicrosoftAppType,
     MicrosoftAppTenantId: process.env.MicrosoftAppTenantId || process.env.AuthTenantID
 });
