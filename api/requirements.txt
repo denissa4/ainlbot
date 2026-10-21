@@ -12,7 +12,10 @@
 # imports cleanly on 3.13; moving to openai >= 1 is a separate code change.
 matplotlib==3.11.1
 plotly==6.9.0
-PyJWT==2.13.0
+# PyJWT is transitive only (azure-identity, snowflake-connector) - nothing here
+# imports jwt. 2.13.0 carries CVE-2026-102265/102266/102267/102272/102273 and
+# CVE-2026-103001, fixed in 2.14.0, plus CVE-2026-101918/102275, fixed in 2.15.0.
+PyJWT==2.15.1
 kaleido==0.2.1
 pandas==3.0.5
 snowflake-connector-python==4.7.3
@@ -35,3 +38,12 @@ scipy==1.18.1
 numpy==2.5.2
 # Transitive (snowflake-connector); >=1.2.1 clears GHSA-6v7p-g79w-8964.
 msgpack>=1.2.1
+# Transitive (matplotlib, which asks only for pillow>=9); >=13 clears
+# CVE-2026-112403 (critical) and CVE-2026-112397/112400/112404/112895/112896/112897.
+pillow>=13.0.0
+# Transitive (requests, snowflake-connector); this exact release clears
+# GHSA-6q48-6c7w-9gw2 (critical).
+certifi>=2026.10.19
+# Transitive (botbuilder-schema, azure-identity); >=3.14.4 clears
+# CVE-2026-111064, CVE-2026-111066 and GHSA-2g87-pp6c-29x5.
+aiohttp>=3.14.4
